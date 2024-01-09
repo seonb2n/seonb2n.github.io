@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Spring MVC DispatcherServlet 과 HandlerAdapter"
-date:   2024-01-078 19:12:57 +0900
+date:   2024-01-08 19:12:57 +0900
 categories: Spring
 ---
 Spring MVC 의 DispatcherServlet 과 HandlerAdapter 를 정리해보자.
