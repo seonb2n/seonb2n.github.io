@@ -4,5 +4,10 @@ icon: fas fa-info-circle
 order: 4
 ---
 
-> Add Markdown syntax content to file `_tabs/about.md`{: .filepath } and it will show up on this page.
-{: .prompt-tip }
+### 안녕하세요. 제 블로그에 오신 것을 환영합니다.
+
+#### 검단지즉 일보전진 : 검이 짧은 만큼 더 나아가야 한다는 의미입니다.
+#### 로고가 드릴을 든 펭귄인 이유는, 퍼스트 펭귄이지만 드릴을 사용해서 얼음을 뚫고 가버리겠다는 의미입니다.
+
+- 이 블로그는 Jekyll with Chirpy theme 를 기본으로 만들었습니다.
+- 제 사용 편의에 맞춰서 일부 코드를 수정했습니다.
