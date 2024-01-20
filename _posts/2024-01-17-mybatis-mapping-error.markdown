@@ -8,8 +8,8 @@ categories: MyBatis
 ### Mybatis 사용중, 쿼리 결과가 dto 에 제대로 매핑이 안되는 오류가 발생했다.
 
 > java.lang.NumberFormatException: For input string: "I am not a member"
-> at java.base/jdk.internal.math.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:2054) ~[na:na]
-> at java.base/jdk.internal.math.FloatingDecimal.parseDouble(FloatingDecimal.java:110) ~[na:na]
+> <br> at java.base/jdk.internal.math.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:2054) ~[na:na]
+> <br> at java.base/jdk.internal.math.FloatingDecimal.parseDouble(FloatingDecimal.java:110) ~[na:na]
 
 Article class 의 구조는 다음과 같다.
 
