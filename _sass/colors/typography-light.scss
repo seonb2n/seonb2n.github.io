@@ -38,11 +38,11 @@
   );
 
   /* Sidebar */
-  --site-title-color: rgb(113, 113, 113);
-  --site-subtitle-color: #717171;
-  --sidebar-bg: #f6f8fa;
+  --site-title-color: rgb(0, 0, 0);
+  --site-subtitle-color: #000000;
+  --sidebar-bg: #808080;
   --sidebar-border-color: #efefef;
-  --sidebar-muted-color: #545454;
+  --sidebar-muted-color: #000000;
   --sidebar-active-color: #1d1d1d;
   --sidebar-hover-bg: rgb(223, 233, 241, 0.64);
   --sidebar-btn-bg: white;
@@ -51,7 +51,7 @@
 
   /* Topbar */
   --topbar-bg: rgb(255, 255, 255, 0.7);
-  --topbar-text-color: rgb(78, 78, 78);
+  --topbar-text-color: rgb(0, 0, 0);
   --search-border-color: rgb(240, 240, 240);
   --search-icon-color: #c2c6cc;
   --input-focus-border-color: #b8b8b8;
