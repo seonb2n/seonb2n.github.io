@@ -34,22 +34,22 @@
       let self = this;
 
       /* always follow the system prefers */
-      // this.sysDarkPrefers.addEventListener('change', () => {
-      //   if (self.hasMode) {
-      //     if (self.isDarkMode) {
-      //       if (!self.isSysDarkPrefer) {
-      //         self.setDark();
-      //       }
-      //     } else {
-      //       if (self.isSysDarkPrefer) {
-      //         self.setLight();
-      //       }
-      //     }
-      //
-      //     self.clearMode();
-      //   }
-      //   self.notify();
-      // });
+      this.sysDarkPrefers.addEventListener('change', () => {
+        if (self.hasMode) {
+          if (self.isDarkMode) {
+            if (!self.isSysDarkPrefer) {
+              self.setDark();
+            }
+          } else {
+            if (self.isSysDarkPrefer) {
+              self.setLight();
+            }
+          }
+
+          self.clearMode();
+        }
+        self.notify();
+      });
       this.setDark();
 
     } /* constructor() */
