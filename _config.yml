@@ -23,7 +23,7 @@ tagline: 검단지즉 일보전진 # it will display as the sub-title
 
 description: >- # used by seo meta and the atom feed
   A blog for technical writing. Interested in the web ecosystem, including java and javaScript.
-  Be inspired by frameworks like spring, sql, react.
+  Be inspired by frameworks like spring, react. Want to be a developer guru.
 
 # Fill in the protocol & hostname for your site.
 # e.g. 'https://username.github.io', note that it does not end with a '/'.
