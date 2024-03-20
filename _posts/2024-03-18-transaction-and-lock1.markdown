@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "트랜잭션 격리 수준 테스트1"
+title: "동시성 이슈와 트랜잭션 격리수준과 락1"
 date: 2024-03-18 19:49:01 +0900
 categories: [ Database ]
 ---
