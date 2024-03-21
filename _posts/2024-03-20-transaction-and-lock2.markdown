@@ -198,3 +198,6 @@ final long inputPoint=100L;
 이 있습니다. 이 글에 따르면, 낙관적 락은 가용성을 중시하며 atomic 한 트랜잭션을 위해서 사용하며, 비관적 락은 엄중하게 일관성 있는 트랜잭션의 수행을 위해서 사용한다고 합니다.
 <br>
 읽어보시기를 권해드립니다.
+
+> 예제 코드는 여기서 확인하실 수 있습니다.
+> https://github.com/seonb2n/transaction-lock-test
