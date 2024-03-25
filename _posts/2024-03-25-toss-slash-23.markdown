@@ -1,0 +1,195 @@
+---
+layout: post
+title: "토스 slash - 2023"
+date: 2024-03-25 20:39:01 +0900
+categories: [ Youtube, Toss-SLASH2023 ]
+---
+
+# 영상으로 배운 것
+
+## 토스 Slash 2023
+
+[토스 Slash](https://www.youtube.com/watch?v=R-majZkYSsI&list=PL1DJtS1Hv1PiGXmgruP1_gM2TSvQiOsFL) 의 영상
+중 10개를 보며 얻은 인사이트를 대략 정리해봤습니다. 보면서 즉각적으로 생각을 정리했기에 내용이 난잡할 수 있습니다. 대략 이런 내용이다 **참고**하시면 좋을 것 같습니다.
+
+### server driven ui 로 토스의 마지막 어드민 만들기
+
+1. 토스 팀은 고객의 민감 정보를 엄격하게 관리해야하는 의무가 있다.
+2. 어드민 플랫폼을 개발함 (어드민 에 사용될 api 나 메타 데이터를 등록하면 자동으로 어드민 페이지를 생성함)
+3. UI DSL 을 바탕으로 FE Component 를 렌더링할 수 있다.
+
+### 코어뱅킹 MSA 전환기(지금 이자 받기)
+
+1. 채널계 → 코어뱅킹 시스템으로 이루어지는 구조
+2. Redis Global Lock 만으로는 동시성 제어가 어렵다.
+3. Kafka 를 활용한 비동기 트랜잭션 처리
+
+- 트랜잭션 분리  (DB 쓰기 지연이 발생해도 괜찮은 데이터에 한해서)
+- Dead Letter Queue Topic 을 활룡해서, 실패한 케이스 재시도 가능
+
+4. Redis 를 활용한 캐싱 전략
+
+- 하루 중 처음으로 계좌에 접근하면, 예상 이자를 Redis 에 캐싱하도록(만료 일자를 하루로 설정)
+
+5. 기존 시스템을 마이그레이션 하는 방법
+
+- 순차 배포 과정
+  1. 스테이징 서버에 대한 모니터링을 충분히 수행함
+  2. 팀 → 회사 차원 → 일부 고객 → 전체 고객 대상
+- End 2 End 통합 테스트 수행
+  1. 고객 상태, 계좌 상태, 출금/입금 정지 상태 등등
+- 트래픽 롤링 배포
+
+### 고객 불안을 0 으로 만드는 토스의 Istio Zero Trust
+
+1. 인프라 레벨에서 보안을 달성하기 위한 성과
+2. 내부망에 있는 기기나 유저도 신뢰하지 않는 것이 Zero Trust 의 핵심
+
+- 네트워크 암호화
+- 권한 접근 정책과 제어
+- 로깅과 모니터링
+
+3. mTLS : TLS 핸드쉐이크 과정에서, 서버에서 클라이언트 인증서를 검증함. 인증된 클라이언트가 아니면 연결을 하지 않는다. 둘 다 서로를 검증하는 형식을 통해 접근 제어가
+   가능함.
+4. Istio : Envoy proxy 가 접근 요청의 로직을 처리함. 로깅과 모니터링을 도와줄 수도 있다.
+
+### Server Driven UI 로 다이나믹한 서비스 효율화하기
+
+1. 사용자가 매번 앱을 업데이트해야만 최신 홈 화면을 보여줄 수 있다는 단점
+2. Home DST → 서버에서 클라이언트에 화면에 표시해야 하는 스펙을 전달함
+3. 클라이언트에서는 정보를 토대로 화면에 표시하기만 한다.
+4. 정의된 UI 를 조합해서 화면을 구성할 수 있다.
+5. handler 를 구성하고, 특정 동작에 대해서 eventLog 를 처리하도록 할 수 있다.
+
+### 토스는 Gateway 이렇게 씁니다.
+
+1. Gateway > Netflix Zuul : 마이크로 서비스의 중계자 역할을 하는 서버.
+2. 서버에서 필요한 공통 로직을 통합해서 처리할 수 있다.
+3. Route > Predicate, Filter
+4. Backend for FE : Web 전용 게이트웨이와 App 전용 게이트웨이를 분리하는 것
+5. 들어오는 요청을 처리하는 게이트웨이, 나가는 요청을 처리하는 게이트웨이가 각각 분리되어 있음
+6. Request 처리
+
+- Request 를 Sanitize 해야 함. 공통 정보를 Internal Header 로 주입할 수 있음.
+
+7. 넷플릭스의 Passport 구조를 통해, Passport 에는 디바이스 정보와 유저 정보가 있음. 이를 통해 유저에 대한 정보를 서비스에서 각각 사용할 수 있음.
+8. 보안과 안정성. 종단간 암호화를 하고 있음. body 를 암호환한다.
+9. Token, OAuth2 와 같은 다양한 인증 인가 로직을 구비해두고 있음.
+10. FDS 는 유저의 의심스러운 행동을 감지하면, IP 나 디바이스가 특정 API 를 이용하지 못하도록 정교한 차단을 하고 있음.
+11. 내부 개발자의 staging 환경에 대한 처리도 인증서를 활용하고 있음.
+12. 응답 지연을 방지하기 위한 Circuit 활용. 호스트나 라우트 단위로 Circuit 브레이크를 하고 있음. 내부 서비스에 대해서도, 혹은 외부에 대해서도.
+13. Gateway 별 레포지토리 분리
+
+- 공통 로직은 라이브러리화
+- java 코드가 yaml 설정으로 변경됨.
+- Gateway 에 route 를 설정할 수 있도록 하는 사내 서비스 개발.
+- 모니터링
+  1. 로깅
+  2. 게이트웨이를 지나는 모든 요청을 ES 에 남김. Envoy 에서 더 자세히 확인 가능하다. MSA 의 트랜잭션을 추적할 수 있다.
+  2. 메트릭
+  3. 시스템 메트릭, app 메트릭을 prometheus → grafana 시각화를 수행한다.
+  3. 트레이싱
+  4. Zscore 를 확인하여, spike 발생을 감지할 수 있다.중요 지표는 slack 으로 감지.
+  5. Pinpoint 를 통해서 트랜잭션을 시각화해서 확인할 수 있다.
+
+### 연결되면 비로소 보이는 것들
+
+1. Observability 를 확보하기 위한 노력으로 Pinpoint 를 사용한다.
+2. 분산 추적에서 큰 강점을 가지고 있음.
+3. 주로 비동기 방식으로 아키텍쳐가 구성되어 있음.
+4. Kotlin Coroutine 을 활용해서 비동기로 아키텍쳐가 구성되어 있다.
+5. Coroutine 을 위한 Pinpoint 플러그인 개발이 필요하다.
+6. kotlin complier 에서 suspend fun 이 포함된 메서드를 변경한다.
+7. 재정의된 cotinuation 객체가 label 을 변환시키며, 재호출마다 다른 작업을 수행한다. continuation passing style 을 사용한다.
+
+- 변수를 이용해 상태를 관리하는, state machine pattern 이다.
+- 비동기 로직을 EventLoop 형태로 사용한다.
+
+8. Pintpoint 의 TraceContext 를 전달해야 함.
+
+### 실시간 시세 데이터를 안전하고 빠르게 처리하기(Market Platform Team)
+
+1. 시세플랫폼은 9시에 트래픽이 많아진다.
+2. 수신부 > 처리부 > 조회부로 구성됨
+3. 처리부를 2원화하는 형태.
+4. 수신부는 처리부의 개수만큼 반복해서 데이터를 보내야 한다.
+
+- 메시지 브로커를 사용해서 수신부는 1번만 데이터를 보낼 수 있다.
+- Kafka, Redis pub/sub 을 비교한 결과, redis 가 지연시간이 낮고 커맨드가 쉬움
+
+5. 처리부는 TCP Socket 으로부터 데이터를 읽어서, 비즈니스 처리를 함.
+
+- 처리부가 데이터를 읽는 속도가 중요하다. TCP 흐름 제어로 서로 간의 데이터 처리량을 조절함.
+- 비즈니스 처리는 다른 쓰레드에게 위임해야 한다.
+- Nio EventLoop 는 비즈니스 로직을 처리해서는 안된다.
+- EventLoop 를 이용해 Queue 로 순서를 보장할 수 있다.
+
+6. EventLoop 를 구현
+
+- 데이터 저장을 Non Blocking 으로 처리
+- 데이터 조회 시, Local Cache 를 사용(과거 데이터 조회 시)
+- 무거운 작업을 위한 별도의 EventLoopGroup 분리
+- NioEventLoop 의 모니터링이 필요하다. 불필요한 로깅 등을 제거한다.
+
+7. CPU Profiling 으로 불필요한 Thread 를 제거한다.
+
+### 프로파일러로 시스템 성능 향상시키기 (Platform Team)
+
+1. Pinpoint 이용 사례
+
+- MSA 구조에서 분산 트랜잭션 모니터링이 가능하다.
+- Spring Clout Config 서버에서 각 서버가 설정 정보를 가져온다.
+
+2. HeapDump 이용 사례
+
+- Old-Gen 영역이 차면서 GC Time 증가
+  1. GC Time 을 줄이기 위해 Heapdump 를 뜰 수 있다.
+  2. HeapDump 를 바탕으로 어떤 클래스의 어떤 객체가 문제인지 알 수 있다.
+
+3. Jemallokc 으로 Native Memoty 개선 사례
+4. async-profiler 로 ElasticSearch, Gateway 개선 사례
+
+- Elastic Search 에서 async-profiler 를 통해서 어디에서 cpu 를 많이 사용하는지 알 수 있다.
+
+5. Spring clolud gateway 에서 메모리가 많이 사용되는 부분을 확인할 수 있다.
+6. Redis 응답 개선을 위한 Strace, PerfTrace 를 사용할 수 있다.
+7. CPU Cache False Sharing 이슈로 리눅스 커널 버전에 따라서 성능차이가 있다.
+8. Istio 는, 비용이 3배 든다.
+
+### (Data Platform Team) Kafka 이중화로 다양한 장애 상황 완벽 대처하기
+
+1. Producer → Broker(Cluster)
+2. 장애 발생 징후를 미리 감지하고, 장애 발생 시 대응 시나리오가 필요하다.
+3. 장애 상황은 kafka 클러스 내의 일부 노드 장애
+4. IDC 전면 장애가 있다.
+
+- IDC 이중화가 안됐다면, 극복이 불가능하다.
+- IDC 에 DR 시스템의 구축이 필요하다.
+  - Active-Standby 구조가 아니라, Active-Active 의 형태로 사용하는 것을 지향하고 있다.
+
+5. Kafka 는 stateful 한 시스템이라 이중화 구성이 어렵다.
+6. 메시지 미러링을 통해서 양쪽 모두 메시즈는 broker 로 발행하지만, consume 는 한쪽 IDC kafka 에서만 소비한다.
+7. Offset 은 클러스터에서 갖고 있음. 다른 IDC 로 넘어가서 유실 없이 소비하기 위해서는 offset 을 양쪽 모두 갖고 저장해야 한다.
+8. 자동화로 많은 부분을 해결하고 있음. Cluster → Prometheus → Elastic Search 등
+
+### 새로운 은행을 위한 Modern 대외 연계 시스템 구축기
+
+1. 채널계 & 계정계(코어뱅킹) → FEP 를 통해 대외기관과 통신함
+2. FEP 는 대외기간과 메시지를 주고 받는, TCP 프로토콜을 사용한다. 그러나 제약이 있다.
+
+- 생산성 : 간단한 기능이라도, 대외기관과의 연계를 위해 여러 솔루션에 의존하게 된다.
+- 안정성 : 장애 도메인이 공유되는 문제가 존재함
+- 유지보수성 : 모놀리틱 아키텍쳐 기반임. FEP 에 익숙한 전문 인력만 FEP 를 관리하고 유지보수할 수 있다.
+
+3. 모던한 FEP 를 처음부터 만들어보자.
+4. Modern FEP
+
+- 전문 기반의 데이터 통신을 하고 있음.
+- 전문설계서의 정보를 참고해서 전문을 해석할 수 있다.
+- 전문설계서를 interface, annotation 을 사용해서 코드로 나타낼 수 있다.
+
+5. Encode : 전문 인스턴스의 필드 정렬 → 필드별 Encode → ByteArray에 쓰기
+
+- Charset 에 따라 적절하게 encode 를 해줘야 한다.
+
+6. Decode : class 정보 얻기 → 필드 정렬 → 필드별 Decode 해서 인스턴스 생성
