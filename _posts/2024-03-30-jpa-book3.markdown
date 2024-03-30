@@ -1,0 +1,226 @@
+---
+layout: post
+title: "자바 ORM 표준 JPA3"
+date: 2024-03-28 18:57:01 +0900
+categories: [ 책, 자바 ORM 표준 JPA 프로그래밍 ]
+---
+
+# 자바 ORM 표준 JPA 프로그래밍3
+
+> 김영한 지음
+
+JPA 에서 교과서로 유명한 책을 읽고 일부 부분을 메모해봤습니다.
+
+## 8장 프록시와 연관관계 관리
+
+프록시를 사용하면 연관된 객체를 처음부터 데이터베이스에서 조회하는 것이 아니라, 실제 사용하는 시점에 데이터베이스에서 조회할 수 있다.
+<br>
+JPA 표준 명세는 지연 로딩의 구현 방법을 JPA 구현체에 위임했다. 하이버네이트는 지연 로딩을 지원하기 위해 프록시를 사용하는 방법과 바이트코드를 수정하는 두 가지 방법을 제공한다.
+프록시의 초기화 과정은 다음과 같다.
+
+1. 프록시 객체에 member.getName() 을 호출해서 실제 데이터를 조회한다.
+2. 프록시 객체는 실제 엔티티가 생성되어 있지 않으면 영속성 컨텍스트에 실제 엔티티 생성을 요청한다. 이것이 초기화다.
+3. 영속성 컨텍스트는 데이터베이스를 조회해서 실제 엔티티 객체를 생성한다.
+4. 프록시 객체는 생성된 실제 엔티티 객체의 참조를 member target 멤버 변수에 보관한다.
+5. 프록시 객체는 실제 엔티티 객체의 getName() 을 호출해서 결과를 반환한다.
+
+### 프록시와 식별자
+
+엔티티를 프록시로 조회할 때 식별자 값(PK)을 파라미터로 전달한다. 프록시 객체는 이 값을 보관한다.
+<br>
+프록시 객체는 식별자 값을 가지고 있기에, 식별자 값에 대한 조회는 프록시 초기화를 유발하지 않는다. 연관관계를 설정할 때는 식별자 값만 사용하므로 프록시를 사용하면 데이터베이스 접근 횟수를 줄일 수 있다.
+
+### 즉시 로딩
+
+즉시 로딩을 사용하려면 @ManyToOne 의 fetch 속성을 FetchType.EAGER 로 지정한다. 대부분의 JPA 구현체는 즉시 로딩을 최적화하기 위해 가능하다면 조인 쿼리를 사용한다.
+
+### NULL 제약조건과 JPA 조인 전략
+
+nullable 한 필드로 조인하는 경우에는 외부 조인을 사용한다. 외부 조인보다 내부  조인이 성능과 최적화에 유리하기에, 외래 키에 NOT NULL 제약 조건을 설정하면 값이 있는 것을 보장할 수 있다.
+<br>
+@JoinColumn(nullable = false) 로 설정해서 이 외래 키는 NULL 값을 허용하지 않는다고 설정하면 JPA 는 외부 조인 대신에 내부 조인을 사용한다.
+
+### JPA 기본 패치 전략
+
+fetch 속성의 기본 설정값은 다음과 같다.
+- @ManyToOne, @OneToOne : 즉시 로딩(FectchType.EAGER)
+- @OneToMany, @ManyToMany: 지연 로딩(FetchType.LAZY)
+
+<br>
+
+JPA 의 기본 전략은 연관된 엔티티가 하나면 즉시 로딩을, 컬렉션이면 지연 로딩을 사용한다. **추천하는 방법은 모든 연관관계에 지연 로딩을 사용하는 것이다.**
+<br>
+애플리케이션의 실제 사용 상황을 보고, 필요한 곳에만 즉시 로딩을 사용하도록 최적화하면 된다.
+
+### 컬렉션에 FetchType.EAGER 사용 시 주의점
+
+- 컬렉션을 하나 이상 즉시 로딩하는 것은 권장하지 않는다. 너무 많은 데이터를 조회하고 반환해야 할 수 있다.
+- 컬렉션 즉시 로딩은 항상 외부 조인(Outer Join)을 사용한다.
+
+### 영속성 전이
+
+```java
+
+  Child child1 = new Child();
+  Child child2 = new Child();
+
+  Parent parent = new Parent();
+  child1.setParent(parent); // 연관관계 추가
+  child2.setParent(parent); // 연관관계 추가
+  parent.getChildren().add(child1);
+  parent.getChildren().add(child2);
+
+  em.persist(parent);
+
+```
+
+@OneToMany(mappedBy = "parent", cascade = CascadeType.PERSIST)
+<br>
+부모를 영속화할 때, 연관된 자식도 함께 영속화할 수 있다.
+
+
+## 9장 값 타입
+
+### 임베디드 타입(복합 값 타입)
+
+새로온 값 타임을 정해서 사용하는 것을 JPA 에서는 임베디드 타입이라고 한다.
+
+```java
+
+@Entity
+public class Member {
+
+    @Id @GeneratedValue
+    private Long id;
+    private String name;
+
+    @Temporal(TemporalType.DATE) java.util.Date startDate;
+    @Temporal(TemporalType.DATE) java.util.Date endDate;
+
+    private String city;
+    private String street;
+
+}
+
+```
+
+Member 가 임베디드 타입으로 근무 기간, 집 주소를 가질 수 있도록 해보자.
+
+```java
+
+@Entity
+public class Member {
+
+    @Id @GeneratedValue
+    private Long id;
+    private String name;
+
+    @Embedded Period workPeriod; // 근무 기간
+
+    @Embedded Address homeAddress; // 집 주소
+
+}
+
+@Embeddable
+public class Period {
+
+  @Temporal(TemporalType.DATE) java.util.Date startDate;
+  @Temporal(TemporalType.DATE) java.util.Date endDate;
+
+}
+
+```
+
+회원 엔티티가 더욱 의미 있고 응집력 있게 변한 것을 알 수 있다. 새로 정의한 값 타입들은 재사용할 수도 있고, 해당 값 타입만 사용하는 의미 있는 메소드도 만들 수 있다.
+<br>
+임베디드 타입을 포함한 값 타입은 엔티티의 생명주기에 의존하므로 엔티티와 임베디드 타입의 관계를 표현하면 컴포지션 관계가 된다.
+<br>
+임베디드 타입을 사용하기 전과 후의 매핑하는 테이블 은 같다.
+
+### 임베디드 타입과 연관관계
+
+임베디드 타입은 값 타임을 포함하거나 엔티티를 참조할 수 있다.
+
+```java
+
+@Embeddable
+public class Period {
+
+  @Temporal(TemporalType.DATE) java.util.Date startDate;
+  @Temporal(TemporalType.DATE) java.util.Date endDate;
+
+  @Embedded Zipcode zipcode; // 임베디드 타입 포함
+  @ManyToOne PeroidSetProvider provider; // 엔티티 탐조
+}
+
+```
+
+### 임베디드 타입과 null
+
+임베디드 타입이 null 이면 매핑한 컬럼 값은 모두 null 이 된다.
+
+### 값 타임 공유 참조
+
+임베디드 타입을 여러 엔티티에서 공유하면 위험하다. 참조된 인스턴스가 의도치 않게 변경될 수 있다. 값 타입을 복사해서 사용해야 한다.
+
+### 불변 객체
+
+객체를 불변하게 만들면 값을 수정할 수 없으므로 사이드 이펙트를 차단할 수 있다.
+
+```java
+
+@Embeddable
+public class Period {
+
+    @Temporal(TemporalType.DATE)
+    java.util.Date startDate;
+    @Temporal(TemporalType.DATE)
+    java.util.Date endDate;
+
+    protected Period() {
+    }
+
+    public Period(Date startDate, Date endDate) {
+        this.startDate = start;
+        this.endDate = endDate;
+    }
+
+    public java.util.Date getEndDate() {
+        return endDate;
+    }
+
+    public java.util.Date getStartDate() {
+        return startDate;
+    }
+}
+```
+
+값을 수정할 수 없기에 공유해도 부작용이 발생하지 않는다.
+
+### 값 타입 컬렉션
+
+값 타입을 하나 이상 저장하려면 컬렉션에 보관하고 @ElementCollection, @CollectionTable 어노테이션을 사용하면 된다.
+
+```java
+
+@ElementCollection
+@CollectionTable(name = "FAVORITE_FOODS", joinColumns = @JoinColumn(Oname = "MEMBER_ID"))
+private Set<String> favoriteFoods = new HashSet<String>();
+
+```
+
+rdb 는 컬럼 안에 컬렉션을 포함할 수 없다. 따라서 별도의 테이블을 추가하고, @CollectionTable 을 사용해서 추가한 테이블을 매핑해야 한다.
+
+### 값 타입 컬렉션의 제약사항
+
+엔티티는 식별자가 있어서 데이터베이스에서 데이터를 쉽게 찾을 수 있지만, 값 타입은 식별자가 없기에 값을 변경하면 db 에 저장된 원본 데이터를 찾기는 어렵다.
+<br>
+특정 엔티티에 소속된 값 타입은 값이 변경되어도 자신이 소속된 엔티티를 db에서 찾고 값을 변경하면 된다. 그러나 값 타입 컬렉션은 별도의 테이블에 보관된다.
+<br>
+따라서, jpa 구현체들은 값 타입 컬렉션에 변경 사항이 발생하면 값 타입 컬렉션이 매핑된 테이블의 연관된 모든 데이터를 삭제하고 현재 값 타입 컬렉션 객체에 있는 모든 값을 db에 다시 저장한다.
+<br>
+따라서, 값 타입 컬렉션이 매핑된 테이블이 데이터가 많다면, 일대다 관계를 고려해야 한다.
+
+### 정리
+
+값 타입은 정말 값 타입이라 판단될 때만 사용해야 한다. 엔티티와 값 타입을 혼동해서 엔티티를 값 타입으로 만들면 안된다.

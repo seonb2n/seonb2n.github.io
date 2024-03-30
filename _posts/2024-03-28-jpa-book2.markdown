@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "자바 ORM 표준 JPA"
+title: "자바 ORM 표준 JPA2"
 date: 2024-03-28 18:57:01 +0900
 categories: [ 책, 자바 ORM 표준 JPA 프로그래밍 ]
 ---
@@ -8,6 +8,8 @@ categories: [ 책, 자바 ORM 표준 JPA 프로그래밍 ]
 # 자바 ORM 표준 JPA 프로그래밍2
 
 > 김영한 지음
+
+JPA 에서 교과서로 유명한 책을 읽고 일부 부분을 메모해봤습니다.
 
 ## 7장 고급 매핑
 
