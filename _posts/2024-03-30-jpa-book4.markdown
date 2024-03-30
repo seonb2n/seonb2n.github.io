@@ -1,0 +1,264 @@
+---
+layout: post
+title: "자바 ORM 표준 JPA4"
+date: 2024-03-30 14:43:01 +0900
+categories: [ 책, 자바 ORM 표준 JPA 프로그래밍 ]
+---
+
+# 자바 ORM 표준 JPA 프로그래밍4
+
+> 김영한 지음
+
+JPA 에서 교과서로 유명한 책을 읽고 일부 부분을 메모해봤습니다.
+
+## 10 장 객체지향 쿼리 언어
+
+### 객체지향 쿼리 소개
+
+JPQL 을 한마디로 정의하면 객체지향 SQL 이다. JPA 가 공식 지원하는 기능은 다음과 같다.
+
+- JPQL
+- Criteira 쿼리 : JPQL 을 편하게 작성하도록 도와주는 API 로, 빌더 클래스 모음이다.
+- 네이티브 SQL : jpa 에서 JPQL 대신 직접 SQL 을 사용할 수 있다.
+
+다음은 JPA 가 공식 지원하는 기능은 아니지만 알아둘 가치가 있다.
+
+- QueryDSL : criteria 쿼리처럼 JPQL 을 편하게 작성하도록 도와주는 빌더클래스 모음.
+- JDBC 직접 사용, MyBatis 와 같은 SQL 매퍼 프레임워크 사용
+
+### JPQL 소개
+
+JPQL 은 엔티티 객체를 조회하는 객체지향 쿼리다. JPQL 은 SQL 을 추상화했기에 특정 db 에 의존하지 않는다.
+
+### Criteria 쿼리 소개
+
+Criteria 는 JPQL 을 생성하는 빌더 클래스다. Criteria 의 장점은 문자가 아닌 프로그래밍 코드로 JPQL 을 작성할 수 있다는 점이다. 문자로 작성한 JPQL
+보다 코드로 작성한 Criteria 의 장점은 다음과 같다.
+
+- 컴파일 시점에 오류를 발견할 수 있다.
+- IDE 를 사용하면 코드 자동완성을 지원한다.
+- 동적 쿼리를 작성하기 편하다.
+
+### QueryDSL 소개
+
+QueryDSL 도 Criteria 처럼 JPQL 빌더 역할을 한다. 코드 기반이면서 단순하고 사용하기 쉽다. QueryDSL 도 어노테이션 프로세서를 사용해서 쿼리 전용 클래스를
+만들어야 한다.
+
+### 네이티브 SQL 소개
+
+JPA 는 SQL 을 직접 사용할 수 있는 기능을 지원하는데 이것을 네이티브 SQL 이라고 한다. 예를 들어 오라클 데이터베이스에서만 사용하는 Connect By 기능이다 특정
+db 에서만 동작하는 SQL 힌트 같은 것이다.
+
+```java
+
+String sql="SELECT ID, AGE From MEMBER WHERE ANME = 'kim'";
+  em.createNativeQuery(sql,Member.class).getResultList();
+
+```
+
+### JPQL
+
+별칭은 필수이다. 별칭이 없으면 잘못된 문법이라는 오류가 발생한다.
+<br>
+TypeQuery 를 사용해서 반환 타입을 지정할 수 있다.
+
+```java
+
+TypedQWuey<Member> query=em.createQuery("SELECT m from Member m",Member.class);
+  List<Member> memberList=query.getResultList();
+
+```
+
+파라미터 바인딩은 이름 기준과 위치 기준 둘 다 지원한다. 위치 기준 파라미터 방식보다는 이름 기준 파라미터 바인딩 방식을 사용하는 것이 더 명확하다.
+
+```java
+
+TypedQWuey<Member> query=em.createQuery("SELECT m from Member m where m.username =:username",Member.class);
+  query.setParameter("username",usernameParam);
+  List<Member> memberList=query.getResultList();
+
+```
+
+### 페이징 API
+
+JPA 는 페이징을 두 API 로 추상화했다.
+
+- setFirstResult(int startPosition) : 조회 시작 위치
+- setMaxResults(int maxResults) : 조회할 데이터 수
+
+```java
+
+query.setFirstResult(10);
+  query.setMaxResults(20);
+  query.getResultList();
+
+```
+
+11번째 데이터부터 총 20건의 데이터를 조회한다.
+
+### Named 쿼리 : 정적 쿼리
+
+- 동적 쿼리 : em.createQuery 처럼 JQPL 을 문자로 완성해서 직접 넘기는 것이다. 런타임에 특정 조건에 따라 JPQL 을 동적으로 구성할 수 있다.
+- 정적 쿼리 : 미리 정의한 쿼리에 이름을 부여해서 필요할 때 사용할 수 있는데 이것을 Named 쿼리라 한다.
+
+Named 쿼리는 애플리케이션 로딩 시점에 JPQL 문법을 체크하고 미리 파싱해준다. 변화지 않는 정적 SQL 이 생성되므로 데이터베이스 조회 서능 최적화에도 유리하다.
+
+```java
+
+@Entity
+@NamedQuery(
+  name = "Member.findByUsername"
+  query= "select m from Member m where m.username = :username"
+)
+public class Member {
+
+}
+
+```
+
+NamedQuery 에 이름을 줄 때, Member.findByUsername 으로 설정한 것은 엔티티 이름을 앞에 둬서 관리를 용이하게 하기 위함이다.
+
+### Criteria
+
+Criteria 쿼리는 JPQL 을 자바 코드로 작성하도록 도와주는 빌더 클래스 API 다.
+
+```java
+
+CriteriaBuilder cb=em.getCriteriaBuilder();
+
+  CriteriaQuery<Member> cq=cb.createQuery(Member.class);
+
+  Root<Member> m=cq.from(Member.class);
+  cq.select(m);
+
+  TypedQuery<Member> query=em.createQuery(cq);
+  List<Member> members=query.getResultList();
+
+```
+
+### 동적 쿼리
+
+다양한 검색 조건에 따라 실행 시점에 쿼리를 생성하는 것을 동적 쿼리라 한다. 동적 쿼리는 코드 기반인 Criteria 로 작성하는 것이 더 편리하다.
+
+```java
+
+CriteriaBuilder cb=em.getCriteriaBuilder();
+
+  CriteriaQuery<Member> cq=cb.createQuery(Member.class);
+
+  Root<Member> m=cq.from(Member.class);
+  Join<Member, Team> t=m.join("team");
+
+  List<Predicate> criteria=new ArrayList<Predicate>();
+
+  if(age!=null)criteria.add(cb.equal(m.<Integer>get("age"),cb.parameter(Integer.class,"age")));
+  if(username!=null)criteria.add(cb.equal(m.get("username"),cb.parameter(String.class,"username")));
+
+```
+
+Criteria 로 동적 쿼리를 구성하면 최소한 공백이나 where, and 의 위치로 인한 에러가 발생하지는 않는다.
+
+### QueryDSL
+
+Criteria 는 JPQL 보다 안정적이지만, 너무 복잡하고 어렵다는 단점이 있다. 쿼리를 문자가 아닌 코드로 작성해도 쉽고 간결하며 그 모양도 쿼리와 비슷하게 개발할 수 있는
+프로젝트가 바로 QueryDSL 이다.
+
+```java
+
+JPAQuery query=new JPAQeury(em);
+  QItem item=QItem.item;
+  List<Item> list=query.from(item)
+  .where(item.name.eq("좋은상품").and(item.price.gt(20000))).list(item);
+
+```
+
+대표적인 결과 조회 메소드는 다음과 같다.
+
+- uniqueResult() : 조회 결과가 한 건일 때 사용한다. 조회 결과가 없으면 null 을 반환하고 결과가 하나 이상이면 NonQuniqueResultException
+  예외가 발생한다.
+- singleResult() : 결과가 하나 이상이면 처음 데이터를 반환한다.
+- list() : 결과가 하나 이상일 때 사용한다. 결과가 없으면 빈 컬렉션을 반환한다.
+
+#### 서브쿼리
+
+서브쿼리는 다음과 같이 사용할 수 있다.
+
+```java
+
+QItem item=QItem.item;
+  QItem itemSUb=new QItem("itemSub");
+
+  query.from(item)
+  .where(item.in(
+  new JPASubQuery().from(itemSub).where(item.name.eq(itemSub.name)).list(itemSub)
+  ))
+  .list(item);
+
+```
+
+#### 동적 쿼리
+
+BooleanBuilder 를 사용하여 동적 쿼리를 생성할 수 있다.
+
+```java
+
+QItem item=QItem.item;
+  BooleanBuilder builder=new BooleanBuilder();
+  if(StringUtils.hasText(param.getName())){
+  builder.and(item.name.contains(param.getName()));
+  }
+  if(param.getPrice()!=null){
+  builder.and(item.price.gt(param.getPrice()))
+  }
+  List<Item> result=query.from(item).where(builder).list(item);
+
+```
+
+### 스토어드 프로시저
+
+JPA 는 2.1 부터 스토어드 프로시저를 지원한다.
+
+```java
+
+StoredProcedureQuery spq=em.createStoredProcedureQuery("proc_multiply");
+  spq.registerStoredProcedureParameter(1,Integer.class,ParameterMode.IN);
+  spq.registerStoredProcedureParameter(2,Integer.class,ParameterMode.OUT);
+
+  spq.setParameter(1,100);
+  spq.execute();
+
+```
+
+em.createStoreProcedureQuery() 메소드에 사용할 스토어드 프로시저 이름을 입력하는 것으로 호출할 수 있다.
+
+### 벌크 연산
+
+```java
+
+int resultCount=em.createQuery(qlString)
+  .setParameter("stockAmount",10)
+  .executeUpdate();
+
+```
+
+벌크 연산은 executeUpdate() 메소드를 사용한다.
+<br>
+벌크 연산은 영속성 컨텍스트를 무시하고 데이터베이스에 직접 쿼리한다. 따라서 영속성 컨텍스트에 있는 상품과 데이터베이스의 상품 가격이 다를 수 있다.
+
+- em.refresh() 를 사용해서 데이터베이스에서 연산 처리된 상품을 다시 조회하게 할 수 있다.
+- 벌트 연산을 수행한 후, 상품을 조회하게 할 수 있다.
+- 벌크 연산 수행 후, 영속성 컨텍스트 초기화를 할 수 있다.
+
+### 플러시 모드와 최적화
+
+```java
+
+product.setPrice(2000);
+
+  Product product2=em.createQuery("select p from Product p where p.rice = 2000",Product.class).getSingleResult();
+
+```
+
+플러시 모드의 기본값인 AUTO 인 경우, 위의 로직상에서는 정상적으로 2000원인 상품이 조회된다. 그럼에도 플러시 모드에 COMMIT 이 존재하는 이유는 쿼리시 발생하는 플러시
+횟수를 줄여서 성능을 최적화하기 위함이다.
+
