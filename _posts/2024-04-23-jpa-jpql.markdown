@@ -1,0 +1,54 @@
+---
+layout: post
+title: "JPA 의 영속성 컨텍스트와 엔티티 동등성"
+date: 2024-04-18 20:36:01 +0900
+categories: [ JPA ]
+---
+
+# JPA 의 영속성 컨텍스트와 엔티티 동등성
+
+의문의 시작은 JPA 에서 JPQL 을 활용하여 엔티티를 조회한 결과보다 영속성 컨텍스트에 존재하는 값을 우선해서 반환한다는 점이었습니다.
+
+```java
+
+    @Test
+    public void JPQL_영속성_컨텍스트_JPQL업데이트() {
+        em.clear();
+
+        Item foundItem = itemRepository.findById(1L).get();
+        // select i1_0.item_id,i1_0.clazz_,i1_0.name,i1_0.price,i1_0.stock_quantity,i1_0.artist,i1_0.etc,i1_0.author,i1_0.isbn,i1_0.actor,i1_0.director from (select price, stock_quantity, item_id, artist, etc, name, null as author, null as isbn, null as actor, null as director, 1 as clazz_ from album union all select price, stock_quantity, item_id, null as artist, null as etc, name, author, isbn, null as actor, null as director, 2 as clazz_ from book union all select price, stock_quantity, item_id, null as artist, null as etc, name, null as author, null as isbn, actor, director, 3 as clazz_ from movie) i1_0 where i1_0.item_id=?
+
+        foundItem.setName("책 2");
+
+        int updatedEntities = em.createQuery("UPDATE Book b SET b.name = 'Book' where b.id = 1")
+            .executeUpdate();
+        // update book set name='Book' where item_id=1
+
+        Book book = em.createQuery("SELECT b from Book b where b.id = 1", Book.class)
+            .getSingleResult();
+        // 쿼리가 나간다 select b1_0.item_id,b1_0.name,b1_0.price,b1_0.stock_quantity,b1_0.author,b1_0.isbn from book b1_0 where b1_0.item_id=1
+
+        assertEquals(book.getName(), foundItem.getName()); // db 에서 값을 조회하나, 영속성 컨텍스트에 있는 값이 이미 존재하기에 해당 값을 반환한다.
+        assertEquals(book.hashCode(), foundItem.hashCode());
+    }
+
+```
+
+DB 에서 조회한 엔티티와 영속성 컨텍스트를 비교하는 기준은 Equality 입니다. 이는 동등성을 의미합니다. 엔티티의 동등성을 판별하기 위해서 우리는 엔티티에 @Id 를 부여했습니다.
+<br>
+이 id 값을 기준으로 엔티티의 동등성을 확인하여 영속성 컨텍스트 내부에는 유일한 엔티티만이 존재할 수 있는 것입니다.
+<br>
+그렇다면 JPQL 을 통해 조회한 값보다 영속성 컨텍스트 내부에 존재하는 값을 우선시하는 이유는 뭘까요? 이는 JPA 에서 1 차 캐시를 통해 Repeatable Read 등급의 트랜잭션 격리 수준을 제공하기 위함입니다.
+<br>
+만약에 JPQL 을 통해 가져온 값을 영속성 컨텍스트 내부에 존재하는 값보다 우선시한다면 어떻게 될까요? 영속성 컨텍스트 내에 존재하던 변경 사항이 사라질 수도 있고, 앞서 조회한 엔티티와 중간에 조회한 엔티티의 값이 달라질 수 있습니다.
+<br>
+
+## 결론
+
+엔티티의 조회는 영속성 컨텍스트에 존재하는 엔티티를 우선합니다. 영속성 컨텍스트에 존재하는 유일한 엔티티를 식별하기 위해서는 id 를 확인합니다.
+
+<br>
+
+### 참고
+- https://www.baeldung.com/jpa-entity-equality
+- https://blog.yevgnenll.me/posts/jpa-entity-eqauls-and-hashcode-equality
