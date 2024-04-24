@@ -1,0 +1,59 @@
+---
+layout: post
+title: "자동으로 rebase 하는 pipeline 구축하기"
+date: 2024-04-24 21:20:01 +0900
+categories: [ 이슈 ]
+---
+
+# 자동으로 rebase 하는 pipeline 구축하기
+
+모든 opened Merge Request 에 대해서 다른 merge request 로 인해서 target branch 의 변경사항이 생기는 경우, rebase 해주는 작업을 자동화했습니다.
+
+### 시작점
+
+새로운 기능의 개발을 위해서는 feature-v2 브랜치를 사용하고, 기존 이슈 대응은 master 브랜치를 사용하고 있었습니다. 새로운 기능은 모두 feature-v2 브랜치에서 브랜치를 새로 따서 작업한 뒤에, feature-v2 브랜치로 머지됩니다.
+그리고 최종적으로 feature-v2 브랜치는 어느 시점에 master 로 머지될 예정입니다.
+<br>
+feature-v2 가 master 로 머지되는 시점에 혼란을 최소화하기 위해서는 feature-v2 가 master 를 주기적으로 rebase 해야만 했습니다.
+
+### git command
+
+처음에는 단순히 pipeline 에 git command 를 추가하고자 했습니다. 그러나, alpine node 를 base image 로 사용하고 있는 상황에서, git command 를 활룡해서 레포지토리의 브랜치를 rebase 하고 push 하는 로직을 추가하는 것은 상황의 모니터링이 안되고, alpine node 에 별도의 설정이 필요했습니다.
+
+### gitlab api
+
+그러던 중 [gitlab api 를 활용해서 자동으로 rebase를 하는 방법을 소개한 아티클](https://medium.com/ovrsea/how-to-automatically-rebase-all-your-merge-requests-on-gitlab-when-pushing-on-master-9b7c5119ac5f)을 찾았습니다. 생각해보니 master 에 대한 merge가 일어나는 것을 감지해서, feature-v2 -> master 인 mr 에서 master 를 rebase 하게 만들면 되는 문제였습니다.
+
+```shell
+
+#!/bin/bash
+
+
+access_token=[GITLAB ACCESS TOKEN]
+gitlab_base_url=[GITLAB BASE URL]
+project_name=[PROJECT NAME]
+
+create_merge_request() {
+
+    opened_merge_requests=$(curl --header "Authorization: Bearer $access_token" "$gitlab_base_url/api/v4/projects/$project_name/merge_requests?state=opened")
+
+    # 각 MR을 대상으로 rebase 실행
+    for iid in $(echo "$opened_merge_requests" | jq '.[] | .iid'); do
+      response=$(curl --request PUT --header "Authorization: Bearer $access_token" "$gitlab_base_url/api/v4/projects/$project_name/merge_requests/$iid/rebase")
+      echo "Merge Request created successfully. IID: $iid"
+      echo "response: $response"
+
+    done
+}
+
+# Merge Request를 생성하고 리베이스 진행
+create_merge_request
+
+```
+
+이렇게 작성한 sh 파일을 gitlab pipeline 에서 수행하도록 추가해줬습니다.
+
+### 주의점
+
+1. TOKEN 소유자의 권한에 따라서 rebase 가 가능하다. 즉, feature-v2 -> master 의 mr 에 대한 수정 권한이 있는 사용자만 rebase 가 된다.
+2. 변수는 utf-8 로 인코딩되어야 한다. 예를 들어 'project/abc' 라면 'project%2F/abc' 와 같은 값을 부여해야 한다.
