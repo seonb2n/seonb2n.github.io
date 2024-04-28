@@ -121,3 +121,24 @@ transaction.commit();
 
 위의 코드처럼, 준영속 상태인 엔티티의 값을 변경한 후에 병합(merge)을 수행하면 변경된 값이 데이터베이스에 반영됩니다.
 병합 작업은 준영속 상태의 엔티티를 영속 상태로 만들어주는 과정이기 때문에, 변경된 값이 병합된 엔티티에 반영됩니다. 그리고 이후에 영속성 컨텍스트를 플러시하고 트랜잭션을 커밋하면 변경된 값이 데이터베이스에 반영됩니다.
+
+## 엔티티 매니저와 동시성
+
+엔티티 매니저는 엔티티 매니저 팩토리를 통해서 생성할 수 있습니다.
+
+```java
+
+EntityManager em = emf.createEntityManager();
+
+```
+
+엔티티 매니저 팩토리는 여러 스레드가 동시에 접근해도 안전하지만, 엔티티 매니저는 여러 스레드가 동시에 접근하면 동시성 문제가 발생합니다.
+[redhat 에서 작성된 entity manager and transaction scopes](https://access.redhat.com/documentation/zh-cn/jboss_enterprise_application_platform/5/html/hibernate_entity_manager_reference_guide/transactions) 라는 글을 참고해보자.
+<br>
+
+이 글에 따르면, 엔티티 매니저는 저렴하지만 쓰레드 세이프 하지 못하기에 하나의 비즈니스 과정에서만 사용되고, 그 이후에 버려져야 한다고 합니다. 엔티티 매니저를 생성한다고 즉시 JDBC 연결을 맺는 것은 아니기에, 특정 요청에 대해서 필요할 수 도 있는 경우에는 일단 생성해줘도 괜찮다고 합니다.
+<br>
+따라서, 엔티티 매니저는 트랜잭션 단위로 사용하는 것을 권장하며, 해당 원칙을 지키지 않은 경우 발생할 수 있는 동시성 이슈에 대한 부분이 나옵니다.
+1. EntityManager는 스레드 안전하지 않으므로, 동시에 작동해야 하는 환경에서는 EntityManager 인스턴스를 공유하면 경합(race) 조건이 발생할 수 있음.
+2. EntityManager에서 발생하는 예외는 데이터베이스 트랜잭션을 롤백하고 EntityManager를 즉시 닫아야 함. 응용 프로그램에서 EntityManager를 바인딩하고 있는 경우, 응용 프로그램을 중지해야 함.
+3. 영속성 컨텍스트는 관리 상태에 있는 모든 객체를 캐시하므로, 오랫동안 열어두거나 많은 데이터를로드하는 경우 OutOfMemoryException을 발생시킬 수 있음. Stale data(잘못된 데이터) 발생 가능성도 있으므로 주의해야 함.
