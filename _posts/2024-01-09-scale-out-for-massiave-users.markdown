@@ -2,7 +2,7 @@
 layout: post
 title:  "사용자 수에 따른 규모 확장성"
 date:   2024-01-09 21:01:57 +0900
-categories: Architecture
+categories: [ 독서, 가상 면접 사례로 배우는 대규모 시스템 설계 기초 1 ]
 ---
 
 ## 사용자 수에 따른 규모 확장을 어떻게 해야할지 고려해보자.
