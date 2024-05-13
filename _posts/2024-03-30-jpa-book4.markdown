@@ -2,7 +2,7 @@
 layout: post
 title: "자바 ORM 표준 JPA4"
 date: 2024-03-30 14:43:01 +0900
-categories: [ 책, 자바 ORM 표준 JPA 프로그래밍 ]
+categories: [ 독서, 자바 ORM 표준 JPA 프로그래밍 ]
 ---
 
 # 자바 ORM 표준 JPA 프로그래밍4

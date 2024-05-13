@@ -2,7 +2,7 @@
 layout: post
 title: "쿠버네티스 교과서 1"
 date: 2024-04-01 22:36:01 +0900
-categories: [ 책, 쿠버네티스 교과서 ]
+categories: [ 독서, 쿠버네티스 교과서 ]
 ---
 
 # Kubernetes
