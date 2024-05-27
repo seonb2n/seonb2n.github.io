@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://seonb2n.github.io/sitemap.xml
