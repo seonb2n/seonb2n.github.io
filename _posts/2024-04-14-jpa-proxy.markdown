@@ -29,11 +29,11 @@ assertTrue(team instanceof HibernateProxy);
 ## Dynamic Proxy
 
 이를 위해서는 Dynamic Proxy 에 대해서 이해할 필요가 있습니다. Hibernate 가 Dynamic Proxy 를 사용하는 것은 아니지만, dynamic proxy 에 대한 이해를 통해서 우리는 어떻게 proxy 객체가 생성되고 작동하는지를 이해할 수 있을 것입니다.
-<br>
+<br><span>
 저는 이 블로그 글을 통해서 Dynamic proxy 를 이해할 수 있었습니다.
 > [누구나 쉽게 배우는 Dynamic Proxy 다루기](https://inpa.tistory.com/entry/JAVA-%E2%98%95-%EB%88%84%EA%B5%AC%EB%82%98-%EC%89%BD%EA%B2%8C-%EB%B0%B0%EC%9A%B0%EB%8A%94-Dynamic-Proxy-%EB%8B%A4%EB%A3%A8%EA%B8%B0)
 
-<br/>
+<br><span>
 요약하자면, Proxy.newProxyInstance() 메서드를 사용하여 프록시 객체를 생성하고, InvocationHandler 인터페이스를 구현하여 메서드 호출을 처리하는 것이 Dynamic Proxy 의 작동 방식입니다.
 
 ## Javassist

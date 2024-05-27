@@ -10,8 +10,16 @@ tail_includes:
 ---
 
 {% include lang.html %}
-
-<article class="px-1">
+<style>
+  article.post-container p {
+    text-indent: 0.5em;
+  }
+  article.post-container p br + span {
+    display: block;
+    text-indent: 0.5em;
+  }
+</style>
+<article class="px-1 post-container">
   <header>
     <h1 data-toc-skip>{{ page.title }}</h1>
 

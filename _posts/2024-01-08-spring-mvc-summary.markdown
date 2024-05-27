@@ -8,7 +8,7 @@ Spring MVC 의 DispatcherServlet 과 HandlerAdapter 를 정리해보자.
 
 ### DispatcherServlet
 스프링에서 요청이 들어오면, Servlet Container 내에서 요청을 처리할 수 있는 적절한 Servlet 을 찾는다.
-<br>
+<br><span>
 이때, 적절한 Servlet 을 찾는 역할을 하는 것이 DispatcherServlet 이다.
 - 스프링 MVC 의 핵심
 - Front Controller 역할을 한다.
@@ -26,9 +26,9 @@ DispatcherServlet 동작 순서
 
 ### HandlerAdapter
 HandlerMapping 이 찾은 handler 를 처리할 수 있는 인터페이스이다.
-<br>
+<br><span>
 핸들러는 컨트롤러를 의미한다.
-<br>
+<br><span>
 1. **AnnotationMethodHandlerAdapter**: @RequestMapping 애노테이션을 사용하여 매핑된 메소드를 가진 컨트롤러를 처리한다.
 2. **HttpRequestHandlerAdapter**: HttpRequestHandler 인터페이스를 구현한 핸들러를 처리한다.
 3. **SimpleControllerHandlerAdapter**: Controller 인터페이스를 구현한 단순한 컨트롤러를 처리한다.

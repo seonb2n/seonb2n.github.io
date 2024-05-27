@@ -73,7 +73,7 @@ em.remove()를 호출한 후에는 해당 엔티티가 영속성 컨텍스트와
 
 플러시(Flush)는 JPA에서 영속성 컨텍스트의 변경 내용을 데이터베이스에 동기화하는 작업을 말합니다. 즉, 영속성 컨텍스트의 변경 사항을 데이터베이스에 반영하는 과정입니다.
 일반적으로는 트랜잭션이 커밋될 때 자동으로 플러시가 발생하지만, 명시적으로 플러시를 호출할 수도 있습니다.
-<br>
+<br><span>
 플러시는 다음과 같은 경우에 자동으로 발생합니다.
 
 1. 트랜잭션 커밋: 트랜잭션을 커밋할 때 영속성 컨텍스트의 변경 내용이 데이터베이스에 반영됩니다. 이때 자동으로 플러시가 발생합니다.
@@ -134,10 +134,10 @@ EntityManager em = emf.createEntityManager();
 
 엔티티 매니저 팩토리는 여러 스레드가 동시에 접근해도 안전하지만, 엔티티 매니저는 여러 스레드가 동시에 접근하면 동시성 문제가 발생합니다.
 [redhat 에서 작성된 entity manager and transaction scopes](https://access.redhat.com/documentation/zh-cn/jboss_enterprise_application_platform/5/html/hibernate_entity_manager_reference_guide/transactions) 라는 글을 참고해보자.
-<br>
+<br><span>
 
 이 글에 따르면, 엔티티 매니저는 저렴하지만 쓰레드 세이프 하지 못하기에 하나의 비즈니스 과정에서만 사용되고, 그 이후에 버려져야 한다고 합니다. 엔티티 매니저를 생성한다고 즉시 JDBC 연결을 맺는 것은 아니기에, 특정 요청에 대해서 필요할 수 도 있는 경우에는 일단 생성해줘도 괜찮다고 합니다.
-<br>
+<br><span>
 따라서, 엔티티 매니저는 트랜잭션 단위로 사용하는 것을 권장하며, 해당 원칙을 지키지 않은 경우 발생할 수 있는 동시성 이슈에 대한 부분이 나옵니다.
 1. EntityManager는 스레드 안전하지 않으므로, 동시에 작동해야 하는 환경에서는 EntityManager 인스턴스를 공유하면 경합(race) 조건이 발생할 수 있음.
 2. EntityManager에서 발생하는 예외는 데이터베이스 트랜잭션을 롤백하고 EntityManager를 즉시 닫아야 함. 응용 프로그램에서 EntityManager를 바인딩하고 있는 경우, 응용 프로그램을 중지해야 함.

@@ -64,7 +64,7 @@ render(<TodoListView todoList={store} />, document.getElementById("root"))
 ```
 
 observer 를 이용해서 derivation 을 적용한 예시 코드.
-<br>
+<br><span>
 TodoListView 는 todoList 의 상태를 관찰하고, TodoView 는 todo 의 상태를 관찰한다. 이렇게 observable 한 state 는 Derivation 인 것이다. todoList.unfinishedTodoCount 는 todoList 의 상태를 기반으로 계산됐고, computed 로 취급된다.
 
 **클래식 MVC 패턴을 적용해보자**

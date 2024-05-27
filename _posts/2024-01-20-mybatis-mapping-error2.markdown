@@ -10,10 +10,10 @@ categories: MyBatis
 이번에도 mismatch 에러다.
 
 > Error instantiating class com.example.springboard.domain.boards.Board with invalid types (int,String,BoardAccessAuthority) or values (1,all_board,1).
-> <br> Cause: java.lang.IllegalArgumentException: argument type mismatch
+> <br><span> Cause: java.lang.IllegalArgumentException: argument type mismatch
 
 Board 객체를 가져올 때, Board 객체의 필드인 AccessAuthority 를 join 해서 가져오도록 하는 과정에서 발생한 에러이다.
-<br>
+<br><span>
 코드는 다음과 같다.
 
 ```java
@@ -129,11 +129,11 @@ Mapper xml 을 다음과 같이 구성됐다.
 ```
 
 클래스와 매퍼의 코드에는 문제가 없어보이는데 왜 board 를 찾은 결과가 제대로 dto 에 매핑이 되지 않는걸까
-<br>
+<br><span>
 
 원인은 간단했다. 기본 생성자가 없었기 때문이다.
-<br>
+<br><span>
 [앞선 글](https://seonb2n.github.io/posts/mybatis-mapping-error/)에서 살펴봤듯이, 기본 생성자가 없다면 제대로 객체의 생성이 이루어지지 않는다.
-<br>
+<br><span>
 
 혹시라도 join 을 이용해 연관 관계에 있는 객체를 eager fetch 하는 경우 나같은 문제를 겪는 사람은 생성자를 다시 살펴보기 바란다.

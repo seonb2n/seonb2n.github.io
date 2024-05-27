@@ -8,8 +8,8 @@ categories: MyBatis
 ### Mybatis 사용중, 쿼리 결과가 dto 에 제대로 매핑이 안되는 오류가 발생했다.
 
 > java.lang.NumberFormatException: For input string: "I am not a member"
-> <br> at java.base/jdk.internal.math.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:2054) ~[na:na]
-> <br> at java.base/jdk.internal.math.FloatingDecimal.parseDouble(FloatingDecimal.java:110) ~[na:na]
+> <br><span> at java.base/jdk.internal.math.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:2054) ~[na:na]
+> <br><span> at java.base/jdk.internal.math.FloatingDecimal.parseDouble(FloatingDecimal.java:110) ~[na:na]
 
 Article class 의 구조는 다음과 같다.
 
@@ -85,7 +85,7 @@ Mapper xml 을 다음과 같이 구성됐다.
 
 클래스와 매퍼의 코드에는 문제가 없어보이는데 왜 article 을 찾은 결과가 제대로 dto 에 매핑이 되지 않는걸까?
 
-<br>
+<br><span>
 
 ```sql
 INSERT INTO board.articles
@@ -94,11 +94,11 @@ VALUES (1, 0, 'written_no_member', 'I am not a member', 0, 0);
 ```
 
 Mock 데이터는 위의 쿼리를 통해서 생성됐다. 문제가 되는 필드인 I am not a member 를 null 로 줘봤다.
-<br>
+<br><span>
 그 결과 오류는 발생하지 않았지만, dto의 필드를 자세히 보면 정상적으로 매핑이 되고 있지 않음을 알고 있었다.
-<br>
+<br><span>
 이것으로 mybatis 의 결과를 dto 로 파싱하는 쪽에 문제가 있음이 확실했다.
-<br>
+<br><span>
 그러면 mybatis 의 파싱 원리를 살펴봐야 한다.
 - 기본 생성자만 존재하는 경우 : 쿼리 결과와 객체의 매핑이 정상적으로 진행 X
 - 기본 생성자와 별칭(alias) 이 존재하는 경우 : 정상적 매핑
@@ -108,7 +108,7 @@ Mock 데이터는 위의 쿼리를 통해서 생성됐다. 문제가 되는 필�
 - 리플렉션을 사용하기에 필드에 대한 getter/setter 는 필요하지 않다.
 
 ### 결국 원인은, 생성자를 제대로 구성하지 않았기 때문이다.
-<br>
+<br><span>
 내가 사용하는 생성자는 All Args 생성자도 아니고, 일부 필드에 대한 생성자였기에 매핑이 정상적으로 수행되지 않은 것이다.
 
 ### 생성자가 private 생성자라면?

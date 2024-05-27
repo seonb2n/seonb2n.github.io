@@ -11,7 +11,7 @@ categories: [ JPA ]
 
 JPA 가 엔티티 데이터에 접근하는 방식을 지정하기 위해서는 @Access 를 사용할 수 있습니다. Access 어노테이션에는 두 가지 옵션이 있는데, 필드 접근을 위한 FIELD
 와 프로퍼티 접근을 위한 PROPERTY 가 있습니다.
-<br>
+<br><span>
 @Access 를 명시적으로 사용하지 않는 경우엔, ID 어노테이션을 기준으로 접근 방식을 결정합니다.
 
 ```java
@@ -29,7 +29,7 @@ public class Member {
 
 아이디가 필드에 있기 때문에 필드 접근 방식을 사용한 것과 동일합니다. 즉, JPA 는 member.id 로 필드 접근을 한다는 의미입니다. 그렇다면 여기서 의문이 생기는데,
 JPA private 필드인 id 에 어떻게 필드 접근을 할까요?
-<br>
+<br><span>
 예상하셨다시피, reflection 을 사용해서 JPA 는 프리이빗 필드에 접근한다고 합니다.
 
 ```java
@@ -45,10 +45,10 @@ Member member=new Member();
 ```
 
 이러한 형태로 private 으로 생성된 필드에 대해서도 값을 할당할 수 있을 것입니다. 이와 관련해서 stackoverflow 의 글들을 살펴봤습니다.
-<br>
+<br><span>
 
 [JPA 에서 getter setter 가 없이도 private field 에 접근하는 방법](https://stackoverflow.com/questions/38002366/how-does-a-jpa-provider-access-private-field-values-when-no-getter-setter-meth)
-<br/>
+<br><span>
 답변을 보면 이런 내용이 나옵니다.
 > The term directly refers to an access strategy which allows the manipulation of an object's
 > field (value) without the need to use getter/setter methods. In Java and for most OR-mappers (at
@@ -58,7 +58,7 @@ Member member=new Member();
 
 JPA 명세 상, 직접 접근 방식은 객체의 필드에 대한 조작을 통해서 달성된다고 합니다. 흔히들 (java reflection api 를 사용하는) introspection 이라고
 부르는 방법입니다.
-<br>
+<br><span>
 intr
 ospection 은 runtime 에서 클래스의 정보나 메소드, 필드를 검출하기 위해서 사용하는 방법입니다. 자세한 내용은 하단의 문서를 살펴보시면 좋을 것 같습니다.
 > [introspection java tutorial](https://web.archive.org/web/20090226224821/http://java.sun.com/docs/books/tutorial/javabeans/introspection/index.html)
@@ -145,7 +145,7 @@ Member member=new Member();
 ```
 
 이렇게 테스트를 해볼 수 있는데, getFirstName 의 경우엔, 실제 firstName 의 Mr. 이 붙은 결과를 반환해주기에 위의 코드와 같은 결과가 나옵니다.
-<br>
+<br><span>
 결론적으로, 우리는 특정 필드에 대해서 조합형으로 사용하기 위해서는 필드를 잘 설계해서 중복되지 않게 결과가 저장되도록 해야 함을 알 수 있습니다.
 이런 주의 사항은 stackoverflow 에서 확인할 수 있었습니다.
 <br />

@@ -9,7 +9,7 @@ categories: [ redis ]
 # redis pub sub
 
 Messaging Queue 의 메시징 패턴 중 하나이다. 채팅 시스템, 푸시 알림 시스템, 구독 시스템과 같은 시스템에서 사용된다.
-<br>
+<br><span>
 redis 의 경우, 메시지를 pub 쪽에 저장하지 않기에, subscriber 가 존재하지 않는다면 메시지는 그대로 유실된다.
 즉, 메시지에 대한 수신 확인을 보장하지 않는다는 것이다.
 
@@ -48,5 +48,5 @@ int pubsubPublishMessage(robj *channel, robj *message) {
 ### 실무에 적용된 레퍼런스
 
 [올리브영 쿠폰 발급 시스템 redis pub/sub 도입 후기](https://oliveyoung.tech/blog/2023-08-07/async-process-of-coupon-issuance-using-redis/)
-<br>
+<br><span>
 [채널톡 채팅 서버 개선](https://channel.io/ko/blog/real-time-chat-server-1-redis-pub-sub)

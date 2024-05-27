@@ -10,9 +10,9 @@ categories: [ git-cz ]
 ![Desktop View](/assets/img/2024-03-31/2024-03-31-git-cz.png){: width="972" height="589" }
 
 프로젝트를 진행하다보면 commit message 관리의 필요성을 느낍니다. git-cz 를 활용해서 커밋 메시지를 카테고리화하고, 가독성을 높여봅시다.
-<br>
+<br><span>
 [git-cz github](https://github.com/streamich/git-cz)
-<br>
+<br><span>
 본인의 환경은 윈도우이며 로컬에 설치된 node 는 18.17 입니다.
 ```shell
 
@@ -76,5 +76,5 @@ npm install -g cz-emoji-conventional cz-emoji
 ```
 
 이제 git-cz 커맨드를 입력하시면 이모지가 추가된 prefix 를 확인하실 수 있으실 겁니다.
-<br>
+<br><span>
 git-cz 를 사용하면 단일 커밋에 대한 가독성이 좋을 뿐 아니라, 함께 프로젝트를 진행하는 입장에서도 mr 의 성격을 파악하기 좋습니다.

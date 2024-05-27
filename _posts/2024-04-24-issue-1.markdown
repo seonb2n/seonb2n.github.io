@@ -13,7 +13,7 @@ categories: [ 이슈 ]
 
 새로운 기능의 개발을 위해서는 feature-v2 브랜치를 사용하고, 기존 이슈 대응은 master 브랜치를 사용하고 있었습니다. 새로운 기능은 모두 feature-v2 브랜치에서 브랜치를 새로 따서 작업한 뒤에, feature-v2 브랜치로 머지됩니다.
 그리고 최종적으로 feature-v2 브랜치는 어느 시점에 master 로 머지될 예정입니다.
-<br>
+<br><span>
 feature-v2 가 master 로 머지되는 시점에 혼란을 최소화하기 위해서는 feature-v2 가 master 를 주기적으로 rebase 해야만 했습니다.
 
 ### git command
