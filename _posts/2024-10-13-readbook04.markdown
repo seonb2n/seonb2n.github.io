@@ -1,0 +1,279 @@
+---
+layout: post
+title: "Clean Architecture 후기"
+date: 2024-10-12 09:49:01 +0900
+categories: [ 독서, Clean Architecture ]
+---
+
+# Clean Architecture
+
+<br><span> 현재 회사에서 제가 맡은 모듈의 구조는 클린 아키텍쳐와 헥사고날 아키텍쳐의 규약을 준수한 형태로 구성되어 있습니다.
+지금까지 layered architecture 로만 구성된 프로젝트만을 접했기에 해당 아키텍쳐에 대한 이해도가 부족하다고 느꼈고, 이에 주말간 가장 유명한 책을 읽어봤습니다.
+
+<br><span> 이 책에서는 견고하고 유연한 시스템을 설계하는 방법을 설명합니다. 책에서 이야기하는 많은 중요한 내용중에 3가지만 요약해볼까 합니다.
+
+## 유즈케이스 기반 설계
+
+### 1. 비즈니스 로직의 독립성
+
+<br><span> 유즈 케이스 기반 아키텍처에서는 비즈니스 로직이 외부 의존성으로부터 독립적입니다. 예를 들어:
+
+```java
+
+// 유즈 케이스 (비즈니스 로직)
+public class CreateOrderUseCase {
+    private final OrderRepository orderRepository;
+
+    public CreateOrderUseCase(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
+    }
+
+    public Order execute(OrderData orderData) {
+        Order order = new Order(orderData);
+        return orderRepository.save(order);
+    }
+}
+
+// 레포지토리 인터페이스
+public interface OrderRepository {
+    Order save(Order order);
+}
+
+// 구체적인 구현 (데이터베이스 계층)
+public class SQLOrderRepository implements OrderRepository {
+    @Override
+    public Order save(Order order) {
+        // SQL 데이터베이스에 주문 저장 로직
+        return order;
+    }
+}
+
+```
+
+<br><span> 이 구조에서는 CreateOrderUseCase가 구체적인 데이터베이스 구현에 의존하지 않고, 추상화된 OrderRepository에 의존합니다. 이로 인해 데이터베이스 기술을 변경하더라도 비즈니스 로직은 변경되지 않습니다.
+
+### 2. 테스트 용이성
+
+<br><span> 유즈 케이스 중심 설계는 단위 테스트를 쉽게 만듭니다:
+
+```java
+
+public class CreateOrderUseCaseTest {
+    @Test
+    void testCreateOrder() {
+        OrderRepository mockRepository = mock(OrderRepository.class);
+        CreateOrderUseCase useCase = new CreateOrderUseCase(mockRepository);
+
+        OrderData orderData = new OrderData("Book", 2);
+        useCase.execute(orderData);
+
+        verify(mockRepository, times(1)).save(any(Order.class));
+    }
+}
+
+```
+
+<br><span> 이 테스트는 데이터베이스 없이도 비즈니스 로직을 검증할 수 있습니다.
+
+### 3. 관심사의 명확한 분리
+
+<br><span> 레이어드 아키텍처에서는 종종 비즈니스 로직과 데이터 접근 로직이 섞이곤 합니다:
+
+```java
+
+// 레이어드 아키텍처의 서비스 레이어
+public class OrderService {
+    @Autowired
+    private EntityManager entityManager;
+
+    public Order createOrder(OrderData orderData) {
+        Order order = new Order(orderData);
+        entityManager.persist(order);
+        return order;
+    }
+}
+
+```
+
+<br><span>반면, 유즈 케이스 기반 아키텍처에서는 이러한 관심사가 명확히 분리됩니다.
+이러한 구조는 시스템의 유지보수성과 확장성을 크게 향상시킵니다. 특히 복잡한 엔터프라이즈 애플리케이션에서 이러한 장점이 두드러집니다. 유즈 케이스 기반 아키텍처를 통해 비즈니스 로직을 순수하게 유지하면서도, 외부 시스템이나 프레임워크와의 결합도를 낮출 수 있습니다.
+
+## 헥사고날 아키텍쳐의 port 와 adapter
+
+<br><span> 이 책에서 또다른 인상 깊었던 부분인 헥사고날 아키텍쳐의 port 와 adapter 에 대한 부분입니다.
+
+### 포트 (Ports)
+
+포트는 애플리케이션의 핵심 로직과 외부 세계 사이의 경계를 정의하는 인터페이스입니다. 두 가지 유형의 포트가 있습니다:
+
+1. 주도하는 포트 (Driving Ports): 애플리케이션의 기능을 외부에서 사용할 수 있게 하는 인터페이스
+2. 주도되는 포트 (Driven Ports): 애플리케이션이 외부 시스템을 사용하기 위한 인터페이스
+
+예를 들어:
+
+```java
+// 주도하는 포트 (Driving Port)
+public interface OrderService {
+    void createOrder(OrderRequest request);
+}
+
+// 주도되는 포트 (Driven Port)
+public interface OrderRepository {
+    void save(Order order);
+}
+```
+
+### 어댑터 (Adapters)
+어댑터는 포트의 구체적인 구현을 제공합니다. 어댑터는 외부 세계와 애플리케이션의 핵심 로직을 연결합니다.
+
+주도하는 어댑터 (Driving Adapters): 외부 요청을 애플리케이션의 포트에 맞게 변환
+주도되는 어댑터 (Driven Adapters): 애플리케이션의 요청을 외부 시스템에 맞게 변환
+
+예를 들어:
+
+```java
+
+// 주도하는 어댑터 (Driving Adapter)
+@RestController
+public class OrderController {
+    private final OrderService orderService;
+
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
+
+    @PostMapping("/orders")
+    public ResponseEntity<Void> createOrder(@RequestBody OrderRequest request) {
+        orderService.createOrder(request);
+        return ResponseEntity.ok().build();
+    }
+}
+
+// 주도되는 어댑터 (Driven Adapter)
+@Repository
+public class JpaOrderRepository implements OrderRepository {
+    private final JpaOrderEntityRepository jpaRepository;
+
+    public JpaOrderRepository(JpaOrderEntityRepository jpaRepository) {
+        this.jpaRepository = jpaRepository;
+    }
+
+    @Override
+    public void save(Order order) {
+        OrderEntity entity = mapToEntity(order);
+        jpaRepository.save(entity);
+    }
+
+    private OrderEntity mapToEntity(Order order) {
+        // Order 도메인 객체를 JPA 엔티티로 변환
+    }
+}
+
+```
+
+## 자바의 접근 제어자를 활용한 모듈화와 도메인 보호
+
+<br><span> 마지막으로 인상 깊었던 부분입니다. 이는 자바의 접근 제어자를 효과적으로 활용하여 모듈화를 달성하고, 도메인 모듈이 외부에서 부적절하게 참조되는 것을 방지하는 방법입니다. 이는 아키텍처의 경계를 명확히 하고 의존성 규칙을 강제하는 데 큰 도움이 됩니다.
+
+### 패키지 구조를 통한 모듈화
+
+자바의 패키지 구조와 접근 제어자를 조합하여 아키텍처 계층을 효과적으로 구현할 수 있습니다:
+
+```
+
+com.example.application
+    ├── domain
+    │   ├── model
+    │   │   └── Order.java (public)
+    │   ├── service
+    │   │   └── OrderService.java (public)
+    │   └── repository
+    │       └── OrderRepository.java (public interface)
+    ├── infrastructure
+    │   └── persistence
+    │       └── JpaOrderRepository.java (package-private)
+    └── interfaces
+        └── web
+            └── OrderController.java (public)
+
+```
+
+### 접근 제어자를 통한 캡슐화
+
+<br><span> 도메인 모델 보호: 도메인 모델 클래스의 내부 구현을 private으로 선언하고, 필요한 메서드만 public으로 노출합니다.
+
+```java
+
+public class Order {
+    private Long id;
+    private String customerName;
+    private List<OrderItem> items;
+
+    public Order(String customerName) {
+        this.customerName = customerName;
+        this.items = new ArrayList<>();
+    }
+
+    public void addItem(OrderItem item) {
+        this.items.add(item);
+    }
+
+    // 게터 메서드들...
+}
+
+```
+
+<br><span> 패키지 수준의 캡슐화 : 인프라스트럭처 구현체를 package-private으로 선언하여 동일 패키지 외부에서의 직접 접근을 방지합니다.
+
+```java
+
+class JpaOrderRepository implements OrderRepository {
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Override
+    public void save(Order order) {
+        entityManager.persist(order);
+    }
+}
+
+```
+
+<br><span> 인터페이스를 통한 의존성 역전 : 도메인 계층에서 인터페이스를 정의하고, 구현체는 인프라스트럭처 계층에 둡니다.
+
+```java
+
+// domain 패키지
+public interface OrderRepository {
+    void save(Order order);
+}
+
+// infrastructure 패키지
+class JpaOrderRepository implements OrderRepository {
+    // 구현...
+}
+
+```
+
+<br><span> 이러한 접근 방식은 클린 아키텍처의 핵심 원칙인 의존성 규칙을 자연스럽게 강제하며, 시스템의 전체적인 구조를 더욱 견고하게 만듭니다.
+
+## 결론
+<br><span> 아키텍처에 대한 고민이 필요한 개발자, 특히 대규모 시스템을 설계하고 유지보수하는 개발자들에게 강력히 추천합니다. 마지막으로 책에서 인상 깊었던 구절을 인용합니다.
+
+> "좋은 아키텍처는 시스템의 수명을 연장하고, 개발 비용을 줄이며, 개발자의 생산성을 높입니다."
+
+<br><span>
+
+> 추천 정도 : ⭐️⭐⭐
+> <br/> 변경하기 좋은 (soft) 구조를 가진 아키텍쳐를 만드려면 어떤 고려를 해야할지 가이드를 줍니다.
+
+<br><span>
+
+**기준표**
+
+<br><span>
+굳이 읽을 필요가 있을까: ⭐
+<br><span>
+읽어두면 좋다: ⭐️⭐️
+<br><span>
+읽어야만 한다: ⭐️⭐️⭐️
