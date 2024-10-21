@@ -1,0 +1,201 @@
+---
+layout: post
+title: "Gradle 멀티모듈 프로젝트에서 fixture를 활용한 테스트 코드 응집도 향상"
+date: 2024-10-21 20:56:01 +0900
+categories: [ Celery ]
+---
+
+---
+
+
+# Gradle 멀티모듈 프로젝트에서 fixture를 활용한 테스트 코드 응집도 챙기기
+
+## 목차
+1. [들어가며](#들어가며)
+2. [프로젝트 구조 개요](#프로젝트-구조-개요)
+3. [Fixture의 실제 활용](#fixture의-실제-활용)
+4. [멀티모듈 프로젝트에서 Fixture 공유 구현](#멀티모듈-프로젝트에서-fixture-공유-구현)
+  - [4.1 테스트 코드 구조화](#41-테스트-코드-구조화)
+  - [4.2 Gradle 설정 최적화](#42-gradle-설정-최적화)
+5. [실제 사용 사례](#실제-사용-사례)
+6. [주의사항 및 학습한 교훈](#주의사항-및-학습한-교훈)
+7. [결론](#결론)
+
+## 들어가며
+현업에서 대규모 Gradle 멀티모듈 프로젝트를 다루면서, 테스트 코드의 중복과 관리의 어려움을 경험했습니다. 저희 프로젝트에서는 클린 아키텍쳐에 따라 api 모듈과 domain 모듈을 분리하는 형태로 프로젝트가 구성되어 있습니다. 그러다보니 api 레이어에 대한 테스트를 위해서는 필연적으로 domain 모듈에 의존할 수 밖에 없습니다.
+<br>
+도메인 모듈에서는 테스트를 용이하게 하기 위해서 fixture 를 사용하고 있는데, api 모듈에서는 domain 모듈 안에 있는 테스트 패키지의 fixture 를 import 할 수 없습니다. 이는 멀티모듈 프로젝트에서 각 모듈은 개별적으로 JAR로 컴파일되기 때문인데요. 이로 인해 한 모듈의 테스트 코드(따라서 fixture도 포함)는 기본적으로 다른 모듈에서 접근할 수 없습니다. 즉, fixture를 공유하지 않으면 각 모듈은 자신의 테스트 코드 내의 fixture만 사용할 수 있어, 코드 재사용성이 떨어지고 테스트 간 일관성을 유지하기 어려웠습니다.
+<br>
+이러한 문제를 해결하기 위해 저는 fixture를 중앙에서 관리하고 여러 모듈에서 공유하는 방식을 도입했습니다. 이 글에서는 이 방법을 적용한 과정과 그 결과로 얻은 테스트 코드 응집도와 재사용성의 향상에 대해 공유하고자 합니다.
+
+## 프로젝트 구조 개요
+프로젝트는 다음과 같은 전형적인 멀티모듈 구조를 가지고 있었습니다:
+
+```
+project-root/
+├── settings.gradle
+├── build.gradle
+├── domain/
+│   ├── build.gradle
+│   └── src/
+│       ├── main/
+│       └── test/
+│           └── java/
+│               └── com/
+│                   └── example/
+│                       └── fixtures/
+├── api/
+│   ├── build.gradle
+│   └── src/
+│       ├── main/
+│       └── test/
+└── application/
+    ├── build.gradle
+    └── src/
+        ├── main/
+        └── test/
+```
+
+각 모듈의 역할은 다음과 같았습니다:
+- `domain`: 핵심 비즈니스 로직과 엔티티
+- `api`: 외부 통신을 위한 API 관련 코드
+- `application`: 애플리케이션의 진입점과 설정
+
+## Fixture의 실제 활용
+Fixture는 테스트에 필요한 일관된 데이터나 객체를 제공하는 도구입니다. 이 프로젝트에서는 특히 복잡한 객체 그래프나 데이터베이스 상태를 테스트해야 할 때 fixture의 강력함을 실감했습니다. 이를 통해 테스트의 일관성을 유지하고, 코드 재사용성을 높이며, 가독성과 유지보수성을 크게 개선할 수 있었습니다.
+
+## 멀티모듈 프로젝트에서 Fixture 공유 구현
+
+### 4.1 테스트 코드 구조화
+실제 프로젝트에서는 다음과 같이 구조화했습니다:
+
+1. `domain` 모듈에 공통으로 사용할 fixture 클래스들을 생성했습니다.
+2. 이 클래스들은 `src/test/java/com/example/fixtures` 디렉토리에 배치했습니다.
+
+### 4.2 Gradle 설정 최적화
+실제 프로젝트에 적용한 Gradle 설정은 다음과 같습니다:
+
+1. 프로젝트 루트의 `build.gradle`:
+
+```groovy
+plugins {
+    id 'java-library'
+}
+
+subprojects {
+    apply plugin: 'java-library'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+```
+
+2. `domain/build.gradle`:
+
+```groovy
+
+plugins {
+  id 'java-library' //추가
+  id 'java-test-fixtures' //추가
+  id 'maven-publish' //추가
+}
+
+
+dependencies {
+  implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+  implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+  fixturesImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+task fixturesJar(type: Jar) {
+  archiveClassifier = 'fixtures'
+  from sourceSets.fixtures.output
+}
+
+artifacts {
+  fixtures fixturesJar
+}
+
+```
+
+3. `api/build.gradle`:
+
+```groovy
+dependencies {
+    implementation project(':domain')
+    fixtureImplementation project(path: ':domain', configuration: 'fixtures')
+}
+```
+
+이 설정을 통해 `domain` 모듈의 fixture를 `api` 모듈에서 효과적으로 사용할 수 있었습니다.
+
+## 실제 사용 사례
+실제 프로젝트에서 사용한 예시를 공유하겠습니다:
+
+`domain/src/test/java/com/example/fixtures/UserFixture.java`:
+```java
+package com.example.fixtures;
+
+import com.example.domain.User;
+
+public class UserFixture {
+    public static User createSampleUser() {
+        return new User("John Doe", "john@example.com");
+    }
+}
+```
+
+`api/src/test/java/com/example/api/UserControllerTest.java`:
+```java
+package com.example.api;
+
+import com.example.fixtures.UserFixture;
+import com.example.domain.User;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class UserControllerTest {
+    @Test
+    public void testCreateUser() {
+        User user = UserFixture.createSampleUser();
+        assertEquals("John Doe", user.getName());
+        assertEquals("john@example.com", user.getEmail());
+    }
+}
+```
+
+이 방식을 통해 여러 모듈에서 일관된 테스트 데이터를 쉽게 사용할 수 있었습니다.
+
+## 주의사항 및 학습한 교훈
+이 방식을 적용하면서 몇 가지 중요한 점을 배웠습니다:
+
+1. 모듈 간 결합도 증가: Fixture 공유로 인해 모듈 간 결합도가 높아질 수 있습니다. 이는 한 모듈의 변경이 다른 모듈에 예상치 못한 영향을 줄 수 있음을 의미합니다.
+
+2. 테스트 독립성 유지: 공유 Fixture를 사용하면서도 각 테스트의 독립성을 유지하는 것이 중요했습니다. 이를 위해 각 테스트 메소드에서 Fixture 객체를 복제하여 사용하는 방식을 채택했습니다.
+
+3. 버전 관리의 중요성: 모듈 간 Fixture 변경 시 버전 관리가 중요했습니다. 우리는 Fixture의 변경사항을 명확히 문서화하고, 변경 시 영향을 받는 모든 테스트를 검토하는 프로세스를 도입했습니다.
+
+## 결론
+Gradle 멀티모듈 프로젝트에서 Fixture를 공유하여 사용하는 방식은 테스트 코드의 품질과 유지보수성을 크게 향상시켰습니다. `fixtureImplementation`을 사용함으로써 테스트 의존성을 더 명확하게 관리할 수 있었고, 프로젝트 구조도 더 체계적으로 유지할 수 있었습니다.
+
+하지만 이 접근 방식이 만능은 아닙니다. 모듈 간 결합도 증가, 테스트 독립성 유지, 버전 관리의 복잡성 등의 도전 과제도 있었습니다.
+
+결과적으로, 이 방식은 우리 팀의 테스트 코드 품질을 크게 개선했고, 개발 생산성 향상에도 기여했습니다. 다른 개발자들도 이 경험이 도움이 되기를 바랍니다.
+
+참고:
+- https://toss.tech/article/how-to-manage-test-dependency-in-gradle
+- https://leeeeeyeon-dev.tistory.com/122#google_vignette
