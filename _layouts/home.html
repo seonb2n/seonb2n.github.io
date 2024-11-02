@@ -40,38 +40,6 @@ refactor: true
   {% endfor %}
 {% endif %}
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Show messages sequentially
-    const messages = document.querySelectorAll('.message-bubble');
-    const recentPosts = document.querySelector('.recent-posts');
-
-    let delay = 0;
-    messages.forEach((message, index) => {
-      const typingIndicator = message.querySelector('.typing-indicator');
-      const messageContent = message.querySelector('.message-content');
-
-      setTimeout(() => {
-        message.style.opacity = '1';
-
-        // Show typing indicator for 1.5s
-        setTimeout(() => {
-          typingIndicator.style.display = 'none';
-          messageContent.classList.remove('hidden');
-        }, 1500);
-
-      }, delay);
-
-      delay += 2000; // 2s delay between messages
-    });
-
-    // Show recent posts
-    setTimeout(() => {
-      recentPosts.classList.remove('hidden');
-      recentPosts.classList.add('show');
-    }, 8000);
-  });
-</script>
 
 <div class="home-container">
   <div class="messages">
@@ -208,3 +176,61 @@ refactor: true
 {% if paginator.total_pages > 1 %}
   {% include post-paginator.html %}
 {% endif %}
+
+<script>
+  (function() {
+    function initMessages() {
+      const messages = document.querySelectorAll('.message-bubble');
+      const recentPosts = document.querySelector('.recent-posts');
+
+      if (!messages.length) {
+        console.log('No messages found');
+        return;
+      }
+
+      let delay = 0;
+      messages.forEach((message, index) => {
+        const typingIndicator = message.querySelector('.typing-indicator');
+        const messageContent = message.querySelector('.message-content');
+
+        if (!typingIndicator || !messageContent) {
+          console.log('Missing elements for message:', index);
+          return;
+        }
+
+        // 즉시 메시지 요소를 보이게 설정
+        message.style.opacity = '0';
+        message.style.display = 'block';
+
+        setTimeout(() => {
+          message.style.opacity = '1';
+
+          // Show typing indicator for 1.5s
+          setTimeout(() => {
+            if (typingIndicator && messageContent) {
+              typingIndicator.style.display = 'none';
+              messageContent.classList.remove('hidden');
+            }
+          }, 1500);
+        }, delay);
+
+        delay += 2000;
+      });
+
+      // Show recent posts
+      if (recentPosts) {
+        setTimeout(() => {
+          recentPosts.classList.remove('hidden');
+          recentPosts.classList.add('show');
+        }, delay + 1000);
+      }
+    }
+
+    // 페이지 로드 시 실행
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initMessages);
+    } else {
+      initMessages();
+    }
+  })();
+</script>

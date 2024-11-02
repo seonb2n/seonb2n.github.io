@@ -472,12 +472,14 @@
   animation: slideUp 0.5s ease forwards;
   opacity: 0;
   position: relative;
+  display: none;
 }
 
 .message-bubble.left {
   align-self: flex-start;
   background: #e9e9eb;
   border-bottom-left-radius: 0.3rem;
+  color: #000000;
 }
 
 .message-bubble.right {
@@ -517,6 +519,11 @@
 .message-content {
   font-size: 1rem;
   line-height: 1.4;
+  transition: opacity 0.3s ease;
+}
+
+.message-content.hidden {
+  display: none;
 }
 
 .recent-posts {
