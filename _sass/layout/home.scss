@@ -469,10 +469,18 @@
   max-width: 70%;
   padding: 1rem;
   border-radius: 1rem;
-  animation: slideUp 0.5s ease forwards;
-  opacity: 0;
   position: relative;
-  display: none;
+  opacity: 0; /* display: none 대신 opacity만 사용 */
+  visibility: hidden; /* 새로 추가 */
+  transition: all 0.5s ease; /* 새로 추가 */
+  transform: translateY(20px); /* 새로 추가 */
+}
+
+/* show 클래스 추가 */
+.message-bubble.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .message-bubble.left {
@@ -585,16 +593,13 @@
   }
 }
 
-/* Delays for messages */
+/* delay 클래스 수정 */
 .delay-1 {
-  animation-delay: 2s;
+  transition-delay: 2s;
 }
 .delay-2 {
-  animation-delay: 4s;
+  transition-delay: 4s;
 }
 .delay-3 {
-  animation-delay: 6s;
-}
-.delay-4 {
-  animation-delay: 8s;
+  transition-delay: 6s;
 }
