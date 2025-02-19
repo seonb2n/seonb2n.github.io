@@ -1,0 +1,118 @@
+---
+layout: post
+title: "Putty 로 EC2 접속이 안됩니다"
+date: 2025-02-19 22:01:01 +0900
+categories: [ 경험, AWS ]
+---
+
+---
+
+# Putty 로 EC2 접속 오류 - no supported authentication methods available server sent publickey gssapi-keyex gssapi-with-mic
+
+## 개요
+
+갑자기 putty 로 ec2 접속이 실패했습니다. 일요일까지 멀쩡히 접속이 됐는데 이런 에러와 함께 접속에 실패했습니다.
+
+```shell
+
+no supported authentication methods available server sent publickey gssapi-keyex gssapi-with-mic
+
+
+```
+
+바로 구글링을 시작했습니다.
+
+### 1. 인스턴스를 새로 생성하기
+
+새로 인스턴스를 띄우면 사이드 프로젝트용 CICD 파이프라인과 모니터링을 다시 구축해야해서 매우 귀찮아집니다. 최후의 방법으로 고려하기로 했습니다.
+<br/>
+참고 : https://velog.io/@sh_38/PuTTY-no-supported-authentication-methods-available-server-sent-publickey-gssapi-keyex-gssapi-with-mic
+
+### 2. 키 재생성 및 putty 최신버전 설치
+
+시도해봤으나 효과가 없었습니다.
+<br/>
+참고 : https://lee-automation-lab.tistory.com/entry/SSH-%EC%A0%91%EC%86%8D-%EC%8B%9C-Disconnected-No-supported-authentication-methods-available-server-sent-publickeygssapi-keyexgssapi-with-mic
+
+### 3. 기타 등등
+
+아무런 효과가 없었습니다.
+
+참고 : https://stackoverflow.com/questions/22168003/disconnected-no-supported-authentication-methods-available-server-sent-public
+
+### 4. 인증 방식 우회하기
+
+왜인지 모르겠지만 내 pem 키로 접속을 하는 것이 문제가 있는 듯 했습니다. 키를 까보고 aws 에서 확인을 했을 때도 키에 문제가 있는 여부는 찾지 못했지만, 키 만으로는 접속을 할 수 없는 것이 명백한 사실이었습니다.
+<br/> 정석으로는 ec2 인스턴스를 새로 구성하거나 키 페어를 발급받는 것이지만, 비밀번호 인증 방식을 활성화하는 것으로도 해결이 가능했습니다.
+
+```shell
+
+
+sudo vi /etc/ssh/sshd_config
+
+
+# 이 부분 no -> yes 로 변경
+PasswordAuthentication yes
+
+
+## ssh 재시작
+sudo systemctl restart sshd.service
+
+```
+
+이후, 사용할 비밀번호 등록
+
+```shell
+
+sudo passwd ec-user
+
+```
+
+<br/> 그러나 이 방법은 임시방편일뿐 결국 문제의 원인을 찾아야 했습니다. 다른 팀원들에게 비밀번호 기반의 사용 방법을 고지하고, 저는 pem 키를 다시 사용할 수 있도록 디버깅에 몰두했습니다.
+
+### 5. 키 인증방식 문제 디버깅 및 해결
+
+먼저, aws 에서 새로운 pem 키를 발급받고 해당 키의 public 키를 ec2 에 등록했습니다. 그럼에도 불구하고 여전히 동일한 에러로 접속이 실패했습니다. 키가 훼손된 것이 문제가 아니라는 것이 명확해졌습니다.
+<br/> 접속 시, 어떤 일로 인해서 실패하는지 로그를 확인했습니다.
+
+```shell
+
+journalctl -f -u sshd
+
+```
+
+접속 시도를 해보니 다음과 같은 중요한 에러 메시지를 발견할 수 있었습니다.
+
+```shell
+
+Authentication refused: bad ownership or modes for directory /home/ec2-user
+
+```
+
+아뿔사, home/ec2-user 의 권한에 문제가 있었던 것 같습니다. 해당 권한을 확인해봤습니다.
+
+```shell
+
+ls -ld /home/ec2-user
+drwxrwxrwx. 4 ec2-user ec2-user 16384 Feb 19 13:17 /home/ec2-user
+
+
+```
+
+구글링을 해보니 다음과 같은 글을 찾을 수 있었습니다.
+> https://serverfault.com/questions/941738/after-changing-permissions-to-home-ec2-user-of-the-main-volume-i-can-no-longer-s
+
+ssh 보안정책 상, 모든 사용자에게 읽기, 쓰기, 실행 권한을 주면 접속이 안된다고 합니다. 따라서 home/ec2-user 를 700 권한으로 변경했습니다.
+
+```shell
+
+sudo chmod 700 /home/ec2-user
+
+```
+
+이 변경 후에 키만으로도 ssh 접속이 정상적으로 동작했습니다. 비밀번호 접속 설정은 보안을 위해서 다시 제거했습니다.
+
+## 마무리
+
+결론적으로 이 문제는 홈 디렉토리의 과도한 권한 설정으로 인해 발생했던 것이었습니다. EC2 인스턴스의 보안을 위해 SSH는 홈 디렉토리의 권한이 너무 개방적일 경우 접속을 거부하도록 설계되어 있습니다.
+이 경험을 통해 SSH 접속 문제가 발생했을 때는 단순히 키나 인증 방식만을 의심할 것이 아니라, 디렉토리 권한과 같은 기본적인 시스템 설정도 꼼꼼히 확인해볼 필요가 있다는 것을 배웠습니다.
