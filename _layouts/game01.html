@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    canvas {
+      border: 1px solid black;
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      background-color: #0a3069;
+    }
+    #score {
+      text-align: center;
+      font-size: 24px;
+    }
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+<div id="score">Score: 0</div>
+<div id="controls">
+  <strong>CONTROL</strong><br>
+  SPACE: JUMP
+</div>
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreDisplay = document.getElementById('score');
+
+  // 플레이어
+  let player = {
+    x: 100,
+    y: 300,
+    width: 40,
+    height: 60,
+    vy: 0,
+    isJumping: false,
+    isSliding: false
+  };
+  const ninja1 = new Image()
+  ninja1.src = '/assets/img/game/ninja_01.svg'
+
+  const ninja2 = new Image()
+  ninja2.src = '/assets/img/game/ninja_02.svg'
+
+  // 별, 구멍 및 게임 변수
+  let stars = [];
+  let holes = [];
+  let score = 0;
+  let frameCount = 0; // 점수 증가 빈도 제어
+  let lastStarFrame = 0; // 별 생성 간격 제어
+  let lastHoleFrame = 0; // 구멍 생성 간격 제어
+  let gravity = 0.6;
+  let jumpPower = -12;
+  let gameSpeed = 1.25; // 초기 속도
+  const maxGameSpeed = 5; // 최대 속도
+
+  // 입력 처리
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && !player.isJumping) {
+      player.vy = jumpPower;
+      player.isJumping = true;
+    }
+  });
+
+
+  // 별 생성
+  function spawnStar() {
+    const type = Math.random() < 0.5 ? 'ground' : 'air';
+    stars.push({
+      x: canvas.width,
+      y: type === 'ground' ? 340 : 250,
+      width: 20,
+      height: 20,
+      type: type
+    });
+  }
+
+  // 구멍 생성
+  function spawnHole() {
+    holes.push({
+      x: canvas.width,
+      width: 60 // 구멍 너비 증가
+    });
+  }
+
+  // 게임 루프
+  function update() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 플레이어 업데이트
+    player.vy += gravity;
+    player.y += player.vy;
+    if (player.y > 300) {
+      player.y = 300;
+      player.vy = 0;
+      player.isJumping = false;
+
+      // 착지 시 구멍 충돌 체크
+      for (let h of holes) {
+        if (
+          player.x >= h.x && // 플레이어 전체가 구멍 안에 있음
+          player.x + player.width <= h.x + h.width
+        ) {
+          alert('Game Over! Score: ' + score);
+          score = 0;
+          frameCount = 0;
+          stars = [];
+          holes = [];
+          player.y = 300;
+          player.vy = 0;
+          player.isJumping = false;
+          player.isSliding = false;
+          player.height = 60;
+          gameSpeed = 1.25; // 속도 초기화
+          scoreDisplay.textContent = 'Score: 0';
+          lastStarFrame = 0;
+          lastHoleFrame = 0;
+          break;
+        }
+      }
+    }
+
+    // 별 업데이트
+    if (Math.random() < 0.05 && frameCount - lastStarFrame > 30) {
+      spawnStar();
+      lastStarFrame = frameCount;
+    }
+    stars.forEach(s => (s.x -= gameSpeed));
+    stars = stars.filter(s => s.x + s.width > 0);
+
+    // 구멍 업데이트
+    if (Math.random() < 0.02 && frameCount - lastHoleFrame > 100) {
+      spawnHole();
+      lastHoleFrame = frameCount;
+    }
+    holes.forEach(h => (h.x -= gameSpeed));
+    holes = holes.filter(h => h.x + h.width > 0);
+
+    // 속도 증가: 10점마다 0.25 증가
+    if (score % 10 === 0 && score > 0) {
+      gameSpeed = Math.min(maxGameSpeed, gameSpeed + 0.25);
+    }
+
+    // 점수 증가: 10프레임마다 1점
+    frameCount++;
+    if (frameCount % 10 === 0) {
+      score += 1;
+      scoreDisplay.textContent = 'Score: ' + score;
+    }
+
+    // 별 수집
+    stars = stars.filter(s => {
+      if (
+        player.x + player.width > s.x &&
+        player.x < s.x + s.width &&
+        player.y + player.height > s.y &&
+        player.y < s.y + s.height
+      ) {
+        score += 5; // 별 수집 시 5점 추가
+        scoreDisplay.textContent = 'Score: ' + score;
+        return false; // 별 제거
+      }
+      return true;
+    });
+
+    // 렌더링
+    // 바닥 선 그리기 (구멍 제외)
+    ctx.strokeStyle = '#CF6E36';
+    ctx.lineWidth = 4;
+    let x = 0;
+    while (x < canvas.width) {
+      let inHole = false;
+      for (let h of holes) {
+        if (x >= h.x && x < h.x + h.width) {
+          inHole = true;
+          break;
+        }
+      }
+      if (!inHole) {
+        ctx.beginPath();
+        ctx.moveTo(x, 360);
+        ctx.lineTo(Math.min(x + 10, canvas.width), 360);
+        ctx.stroke();
+      }
+      x += 10;
+    }
+
+    const currentNinja = frameCount % 30 < 10 ? ninja1 : ninja2;
+    ctx.drawImage(currentNinja, player.x, player.y, player.width, player.height);
+
+    ctx.fillStyle = 'yellow';
+    stars.forEach(s => {
+      ctx.beginPath();
+      ctx.arc(s.x + s.width / 2, s.y + s.height / 2, 10, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    requestAnimationFrame(update);
+  }
+
+  update();
+</script>
+</body>
+</html>

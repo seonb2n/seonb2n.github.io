@@ -1,0 +1,15 @@
+<svg width="40" height="60" xmlns="http://www.w3.org/2000/svg">
+  <!-- 몸통 -->
+  <rect x="10" y="10" width="20" height="30" fill="black"/>
+  <!-- 머리 -->
+  <rect x="12" y="5" width="16" height="10" fill="black"/>
+  <!-- 마스크 (얼굴) -->
+  <rect x="14" y="7" width="12" height="6" fill="gray"/>
+  <!-- 눈 -->
+  <circle cx="18" cy="10" r="1" fill="white"/>
+  <circle cx="22" cy="10" r="1" fill="white"/>
+  <!-- 다리 1 (왼쪽 다리 앞으로) -->
+  <rect x="10" y="40" width="8" height="15" fill="black"/>
+  <!-- 다리 2 (오른쪽 다리 뒤로) -->
+  <rect x="22" y="40" width="8" height="15" fill="black"/>
+</svg>
