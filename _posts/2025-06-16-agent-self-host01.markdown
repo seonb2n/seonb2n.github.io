@@ -7,7 +7,6 @@ categories: [ 프로젝트, LLM-Agent ]
 
 ---
 
-# LLM Agent 직접 만들어보기 01
 
 > 환경
 > <br/> window
